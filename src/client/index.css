@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f5f5f7;
+  --color-foreground: #1d1d1f;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-card: rgba(255, 255, 255, 0.75);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-[color:var(--color-border)];
+  }
+  body {
+    @apply m-0 min-h-screen font-sans antialiased;
+    background: linear-gradient(135deg, #e8eaf6 0%, #f5f5f5 30%, #e0f2f1 60%, #f3e5f5 100%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .glass-dark {
+    background: rgba(30, 30, 40, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .glass-border {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.dragging {
+  opacity: 0.6;
+  transform: scale(0.95) rotate(1deg);
+}
+
+.drag-over {
+  background: rgba(100, 140, 255, 0.08);
+  border-color: rgba(100, 140, 255, 0.4);
+}

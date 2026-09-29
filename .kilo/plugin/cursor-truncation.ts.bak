@@ -1,0 +1,61 @@
+import type { Plugin } from "@kilocode/plugin"
+
+// Configuration constants for context engineering
+const MAX_TAIL_MESSAGES = 8             // Keeps System Prompt + last ~4 turns verbatim
+const TOOL_TRUNCATE_CHAR_LIMIT = 1000   // Hard cap on old tool output lengths
+const TRUNCATION_SUFFIX = "\n... [Truncated by Cursor-Style Context Plugin]"
+
+const cursorTruncationServer: Plugin = async () => {
+  // Verification log to confirm the plugin is actively loaded by Kilo
+  console.log("🟢 [Plugin Loaded] Cursor-Style Truncation plugin is active!")
+
+  return {
+    "experimental.chat.messages.transform": async (_input, output) => {
+      const msgs = output.messages
+      if (!msgs || msgs.length <= MAX_TAIL_MESSAGES) return
+
+      // 1. In-Place Sliding Window Truncation (O(1))
+      // Preserves msgs[0] (System Prompt) and drops stale middle turns directly,
+      // maximizing vLLM KV-cache hits for the active tail.
+      const dropCount = msgs.length - MAX_TAIL_MESSAGES
+      msgs.splice(1, dropCount)
+
+      // 2. In-Place Tool Output Pruning
+      // Skips the last 2 turns to ensure active execution context is untouched.
+      const pruneBoundary = msgs.length - 2
+
+      for (let i = 1; i < pruneBoundary; i++) {
+        const msg = msgs[i]
+        
+        if (msg.role !== "tool") continue
+
+        // Prune raw string tool outputs
+        if (typeof msg.content === "string") {
+          if (msg.content.length > TOOL_TRUNCATE_CHAR_LIMIT) {
+            msg.content = msg.content.slice(0, TOOL_TRUNCATE_CHAR_LIMIT) + TRUNCATION_SUFFIX
+          }
+        } 
+        // Prune multi-part structured tool outputs
+        else if (Array.isArray(msg.content)) {
+          for (let j = 0; j < msg.content.length; j++) {
+            const part = msg.content[j]
+            if (
+              part &&
+              typeof part === "object" &&
+              part.type === "text" &&
+              typeof part.text === "string" &&
+              part.text.length > TOOL_TRUNCATE_CHAR_LIMIT
+            ) {
+              part.text = part.text.slice(0, TOOL_TRUNCATE_CHAR_LIMIT) + TRUNCATION_SUFFIX
+            }
+          }
+        }
+      }
+    },
+  }
+}
+
+export default {
+  id: "cursor-style-truncation",
+  server: cursorTruncationServer,
+}
