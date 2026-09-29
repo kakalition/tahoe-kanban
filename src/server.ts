@@ -121,7 +121,7 @@ const app = new Elysia()
     task.updatedAt = new Date().toISOString();
     return task;
   })
-  .listen(10002);
+  .listen({ port: 10002, hostname: '0.0.0.0' });
 
 console.log(`\n  🚀 Tahoe Kanban API`);
 console.log(`  → http://localhost:${app.server?.port ?? 10002}\n`);
